@@ -23,4 +23,5 @@ define $(PKG)_BUILD
         -DCMAKE_TOOLCHAIN_FILE='$(CMAKE_TOOLCHAIN_FILE)' \
 	-DGEOS_ENABLE_INLINE=NO
     $(MAKE) -C '$(1).build' -j '$(JOBS)' install VERBOSE=1
+    ln -s '$(PREFIX)/$(TARGET)/bin/geos-config' '$(PREFIX)/bin/$(TARGET)-geos-config'
 endef
