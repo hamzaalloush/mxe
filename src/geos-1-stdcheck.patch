@@ -1,0 +1,43 @@
+This file is part of MXE.
+See index.html for further information.
+
+Contains ad hoc patches for cross building.
+
+From 4ae7db31fc788b5cf1f45697680fa57348f7ac2a Mon Sep 17 00:00:00 2001
+From: MXE
+Date: Sun, 31 May 2015 18:31:02 +0300
+Subject: [PATCH] geos: more reliable detecion of std::isnan and std::isfinite
+
+
+diff --git a/CMakeLists.txt b/CMakeLists.txt
+index 52b4463..1a6f08f 100644
+--- a/CMakeLists.txt
++++ b/CMakeLists.txt
+@@ -183,7 +183,11 @@ endif()
+ include(CheckPrototypeExists)
+ include(CheckSymbolExists)
+ 
+-check_prototype_exists(isnan cmath HAVE_STD_ISNAN)
++check_cxx_source_compiles(
++  "#include <cmath>
++  int main() { double x=0.1; return std::isnan(x)?1:0; }"
++  HAVE_STD_ISNAN)
++
+ if(NOT HAVE_STD_ISNAN)
+   if(MSVC)
+     check_prototype_exists(_isnan float.h HAVE_ISNAN)
+@@ -197,7 +201,10 @@ if(NOT HAVE_STD_ISNAN)
+   endif()
+ endif()
+ 
+-check_prototype_exists(isfinite cmath HAVE_STD_ISFINITE)
++check_cxx_source_compiles(
++  "#include <cmath>
++  int main() { double x=0.1; return std::isfinite(x)?1:0; }"
++  HAVE_STD_ISFINITE)
+ 
+ if(NOT HAVE_STD_ISFINITE)
+   if(MSVC)
+-- 
+1.9.1
+
