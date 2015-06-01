@@ -18,14 +18,8 @@ define $(PKG)_UPDATE
 endef
 
 define $(PKG)_BUILD
-    cd '$(1)' && ./configure \
-        $(MXE_CONFIGURE_OPTS)
-    $(MAKE) -C '$(1)' -j '$(JOBS)' install bin_PROGRAMS= sbin_PROGRAMS= noinst_PROGRAMS=
-
-    ln -sf '$(PREFIX)/$(TARGET)/bin/geos-config' '$(PREFIX)/bin/$(TARGET)-geos-config'
-
-    '$(TARGET)-gcc' \
-        -W -Wall -Werror -ansi -pedantic \
-        '$(2).c' -o '$(PREFIX)/$(TARGET)/bin/test-geos.exe' \
-        `'$(PREFIX)/bin/$(TARGET)-geos-config' --cflags --clibs`
+    mkdir '$(1).build'
+    cd '$(1).build' && cmake '$(1)' \
+        -DCMAKE_TOOLCHAIN_FILE='$(CMAKE_TOOLCHAIN_FILE)'
+    $(MAKE) -C '$(1).build' -j '$(JOBS)' install VERBOSE=1
 endef
