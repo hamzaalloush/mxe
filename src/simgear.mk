@@ -8,7 +8,7 @@ $(PKG)_CHECKSUM := 3021692be05ca1c983ffa7a4483a74934ec02dbb
 $(PKG)_SUBDIR   := simgear-$($(PKG)_VERSION)
 $(PKG)_FILE     := simgear-$($(PKG)_VERSION).tar.bz2
 $(PKG)_URL      := http://mirrors.ibiblio.org/simgear/ftp/Source/$($(PKG)_FILE)
-$(PKG)_DEPS     := gcc openscenegraph jpeg boost openal expat cmake freeglut
+$(PKG)_DEPS     := gcc jpeg boost expat cmake freeglut
 
 define $(PKG)_UPDATE
     $(WGET) -q -O- 'http://mirrors.ibiblio.org/simgear/ftp/Source/' | \
@@ -26,6 +26,8 @@ define $(PKG)_BUILD
         -DCMAKE_HAVE_PTHREAD_H=OFF \
         -DCMAKE_VERBOSE_MAKEFILE=ON \
         -DPKG_CONFIG_EXECUTABLE='$(PREFIX)/bin/$(TARGET)-pkg-config' \
+		 -DSIMGEAR_HEADLESS=ON \
+		 -DENABLE_SOUND=OFF
 		 $(if $(BUILD_STATIC), \
 		 -DSIMGEAR_SHARED=OFF \
 		 -DSYSTEM_EXPAT=OFF, \
