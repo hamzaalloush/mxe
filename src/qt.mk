@@ -8,7 +8,7 @@ $(PKG)_CHECKSUM := 76aef40335c0701e5be7bb3a9101df5d22fe3666
 $(PKG)_SUBDIR   := $(PKG)-everywhere-opensource-src-$($(PKG)_VERSION)
 $(PKG)_FILE     := $(PKG)-everywhere-opensource-src-$($(PKG)_VERSION).tar.gz
 $(PKG)_URL      := http://download.qt.io/official_releases/qt/4.8/$($(PKG)_VERSION)/$($(PKG)_FILE)
-$(PKG)_DEPS     := gcc postgresql freetds openssl zlib libpng jpeg libmng tiff sqlite dbus
+$(PKG)_DEPS     := gcc postgresql freetds zlib libpng jpeg libmng tiff sqlite dbus
 
 define $(PKG)_UPDATE
     $(WGET) -q -O- 'http://qt.gitorious.org/qt/qt/commits' | \
@@ -20,8 +20,7 @@ endef
 define $(PKG)_BUILD
     cd '$(1)' && QTDIR='$(1)' ./bin/syncqt
     cd '$(1)' && \
-        OPENSSL_LIBS="`'$(TARGET)-pkg-config' --libs-only-l openssl`" \
-        PSQL_LIBS="-lpq -lsecur32 `'$(TARGET)-pkg-config' --libs-only-l openssl` -lws2_32" \
+        PSQL_LIBS="-lpq -lsecur32 -lws2_32" \
         SYBASE_LIBS="-lsybdb `'$(TARGET)-pkg-config' --libs-only-l gnutls` -liconv -lws2_32" \
         ./configure \
         -opensource \
@@ -62,7 +61,7 @@ define $(PKG)_BUILD
         -system-libtiff \
         -system-libmng \
         -system-sqlite \
-        -openssl-linked \
+        -no-openssl \
         -dbus-linked \
         -v
 
