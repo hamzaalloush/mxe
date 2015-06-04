@@ -52,5 +52,3 @@ define $(PKG)_BUILD
     $(MAKE) -C '$(1)/examples/CGALimageIO' -j $(JOBS)
     $(INSTALL) '$(1)/examples/CGALimageIO/convert_raw_image_to_inr.exe' '$(PREFIX)/$(TARGET)/bin/test-cgalimgio.exe'
 endef
-
-$(PKG)_BUILD_SHARED =
