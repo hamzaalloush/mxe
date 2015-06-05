@@ -21,6 +21,7 @@ endef
 define $(PKG)_BUILD
     mkdir '$(1).build'
     cd '$(1).build' && cmake '$(1)' \
-        -DCMAKE_TOOLCHAIN_FILE='$(CMAKE_TOOLCHAIN_FILE)'
+        -DCMAKE_TOOLCHAIN_FILE='$(CMAKE_TOOLCHAIN_FILE)' \
+	-DSIMGEAR_COMPILE_TEST_EXITCODE=0
     $(MAKE) -C '$(1).build' -j '$(JOBS)' install VERBOSE=1
 endef
