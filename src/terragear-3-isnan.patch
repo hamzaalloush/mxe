@@ -1,0 +1,79 @@
+This file is part of MXE.
+See index.html for further information.
+
+Contains ad hoc patches for cross building.
+
+From 355d5796aa6b636029d8228e6b1e26eab6ff502f Mon Sep 17 00:00:00 2001
+From: MXE
+Date: Sat, 6 Jun 2015 12:57:08 +0300
+Subject: [PATCH] isnan temp fix
+
+
+diff --git a/src/Airports/GenAirports850/linearfeature.cxx b/src/Airports/GenAirports850/linearfeature.cxx
+index 5c3724e..a38d87c 100644
+--- a/src/Airports/GenAirports850/linearfeature.cxx
++++ b/src/Airports/GenAirports850/linearfeature.cxx
+@@ -246,7 +246,7 @@ void LinearFeature::ConvertContour( BezContour* src, bool closed )
+         // theat close to 180 at the control point to the cur node and next node
+         if ( curve_type == CURVE_QUADRATIC )
+         {
+-            if ( (abs(theta1 - 180.0) < 5.0 ) || (abs(theta1) < 5.0 ) || (isnan(theta1)) )
++            if ( (abs(theta1 - 180.0) < 5.0 ) || (abs(theta1) < 5.0 ) || (std::isnan(theta1)) )
+             {
+                 TG_LOG(SG_GENERAL, SG_DEBUG, "\nLinearFeature: Quadtratic curve with cp in line : convert to linear: " << description << ": theta is " << theta1 );
+                 curve_type = CURVE_LINEAR;
+@@ -259,11 +259,11 @@ void LinearFeature::ConvertContour( BezContour* src, bool closed )
+ 
+         if ( curve_type == CURVE_CUBIC )
+         {
+-            if ( (abs(theta1 - 180.0) < 5.0 ) || (abs(theta1) < 5.0 ) || (isnan(theta1)) )
++            if ( (abs(theta1 - 180.0) < 5.0 ) || (abs(theta1) < 5.0 ) || (std::isnan(theta1)) )
+             {
+                 TG_LOG(SG_GENERAL, SG_DEBUG, "\nLinearFeature: Cubic curve with cp1 in line : " << description << ": theta is " << theta1 );
+ 
+-                if ( (abs(theta2 - 180.0) < 5.0 ) || (abs(theta2) < 5.0 ) || (isnan(theta2)) )
++                if ( (abs(theta2 - 180.0) < 5.0 ) || (abs(theta2) < 5.0 ) || (std::isnan(theta2)) )
+                 {
+                     TG_LOG(SG_GENERAL, SG_DEBUG, "\n               and cp2 in line : " << description << ": theta is " << theta2 << " CONVERTING TO LINEAR" );
+ 
+@@ -278,7 +278,7 @@ void LinearFeature::ConvertContour( BezContour* src, bool closed )
+             {
+                 TG_LOG(SG_GENERAL, SG_DEBUG, "\nLinearFeature: Cubic curve withOUT cp1 in line : keep quadtratic: " << description << ": theta is " << theta1 );
+ 
+-                if ( (abs(theta2 - 180.0) < 5.0 ) || (abs(theta2) < 5.0 ) || (isnan(theta2)) )
++                if ( (abs(theta2 - 180.0) < 5.0 ) || (abs(theta2) < 5.0 ) || (std::isnan(theta2)) )
+                 {
+                     TG_LOG(SG_GENERAL, SG_DEBUG, "\n               BUT cp2 IS in line : " << description << ": theta is " << theta2 );
+                 }
+@@ -1087,4 +1087,4 @@ void LinearFeature::GetLights( tglightcontour_list& lights )
+     {
+         lights.push_back( lighting_polys[i] );
+     }
+-}
+\ No newline at end of file
++}
+diff --git a/src/Lib/terragear/tg_misc.cxx b/src/Lib/terragear/tg_misc.cxx
+index ceeae60..a8e4889 100644
+--- a/src/Lib/terragear/tg_misc.cxx
++++ b/src/Lib/terragear/tg_misc.cxx
+@@ -174,7 +174,7 @@ SGGeod OffsetPointMiddle( const SGGeod& gPrev, const SGGeod& gCur, const SGGeod&
+     cp    = cross( dirCur, dirNext );
+     theta = SGMiscd::rad2deg(CalculateTheta( dirCur, dirNext ) );
+ 
+-    if ( (abs(theta - 180.0) < 0.1) || (abs(theta) < 0.1) || (isnan(theta)) ) {
++    if ( (abs(theta - 180.0) < 0.1) || (abs(theta) < 0.1) || (std::isnan(theta)) ) {
+         // straight line blows up math - offset 90 degree and dist is as given
+         courseOffset = SGMiscd::normalizePeriodic(0, 360, courseNext-90.0);
+         distOffset   = offset_by;
+@@ -275,7 +275,7 @@ void OffsetPointsMiddle( const SGGeod& gPrev, const SGGeod& gCur, const SGGeod&
+     cp    = cross( dirCur, dirNext );
+     theta = SGMiscd::rad2deg(CalculateTheta( dirCur, dirNext ) );
+ 
+-    if ( (abs(theta - 180.0) < 0.1) || (abs(theta) < 0.1) || (isnan(theta)) ) {
++    if ( (abs(theta - 180.0) < 0.1) || (abs(theta) < 0.1) || (std::isnan(theta)) ) {
+         // straight line blows up math - offset 90 degree and dist is as given
+         courseOffset = SGMiscd::normalizePeriodic(0, 360, courseNext-90.0);
+         distOffsetInner  = offset_by+width/2.0f;
+-- 
+1.9.1
+

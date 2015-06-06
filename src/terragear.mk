@@ -22,6 +22,7 @@ define $(PKG)_BUILD
     mkdir '$(1).build'
     cd '$(1).build' && cmake '$(1)' \
         -DCMAKE_TOOLCHAIN_FILE='$(CMAKE_TOOLCHAIN_FILE)' \
+	-DCMAKE_CXX_FLAGS='-D__STDC_CONSTANT_MACROS -D_USE_MATH_DEFINES -fpermissive -std=c++11' \
 	-DSIMGEAR_COMPILE_TEST_EXITCODE=0
     $(MAKE) -C '$(1).build' -j '$(JOBS)' install VERBOSE=1
 endef
