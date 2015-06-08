@@ -1,0 +1,350 @@
+This file is part of MXE.
+See index.html for further information.
+
+Contains ad hoc patches for cross building.
+
+From 887238c4c869173fe2e07e1b2a75c065c51e0acc Mon Sep 17 00:00:00 2001
+From: MXE
+Date: Mon, 8 Jun 2015 14:50:43 +0300
+Subject: [PATCH 1/7] add CGAL 4.4 support for expected lvalue, made by "Peter
+ Sadrozinski <psadrozinski@gmail.com>":
+ https://sourceforge.net/p/flightgear/mailman/message/33265201/
+
+
+diff --git a/src/Lib/terragear/tg_nodes.cxx b/src/Lib/terragear/tg_nodes.cxx
+index 54b4970..cd91beb 100644
+--- a/src/Lib/terragear/tg_nodes.cxx
++++ b/src/Lib/terragear/tg_nodes.cxx
+@@ -81,9 +81,11 @@ bool TGNodes::get_geod_edge( const SGBucket& b, std::vector<SGGeod>& north, std:
+ // Three dimensional queries is a bit overkill, but the code, although faster, is slightly more cumbersome
+ 
+ // get function for the property map - needed for cgal trait extension
++#if 0
+ My_point_property_map::reference get(My_point_property_map, My_point_property_map::key_type p) {
+     return boost::get<0>(p);
+ }
++#endif
+ 
+ // Build the k-d tree
+ void TGNodes::init_spacial_query( void )
+@@ -340,4 +342,4 @@ void TGNodes::SaveToGzFile( gzFile& fp )
+ void TGNodes::LoadFromGzFile( gzFile& fp )
+ {
+     tg_node_list.LoadFromGzFile( fp );
+-}
+\ No newline at end of file
++}
+diff --git a/src/Lib/terragear/tg_nodes.hxx b/src/Lib/terragear/tg_nodes.hxx
+index 0e21713..83f8592 100644
+--- a/src/Lib/terragear/tg_nodes.hxx
++++ b/src/Lib/terragear/tg_nodes.hxx
+@@ -20,17 +20,19 @@ typedef Kernel::Point_2 tgn_Point;
+ typedef boost::tuple<tgn_Point, double> Point_and_Elevation;
+ 
+ //definition of the property map
++#if 0
+ struct My_point_property_map{
+   typedef tgn_Point value_type;
+   typedef const value_type& reference;
+   typedef const Point_and_Elevation& key_type;
+   typedef boost::readable_property_map_tag category;
+ };
++#endif
+ 
+ //typedef CGAL::Search_traits_2<Kernel> Traits;
+ typedef CGAL::Search_traits_2<Kernel> Traits_base;
+-typedef CGAL::Search_traits_adapter<Point_and_Elevation, My_point_property_map, Traits_base> Traits;
+-
++//typedef CGAL::Search_traits_adapter<Point_and_Elevation, My_point_property_map, Traits_base> Traits;
++typedef CGAL::Search_traits_adapter<Point_and_Elevation,CGAL::Nth_of_tuple_property_map<0, Point_and_Elevation>,Traits_base>    Traits;
+ typedef CGAL::Fuzzy_iso_box<Traits> Fuzzy_bb;
+ typedef CGAL::Kd_tree<Traits> Tree;
+ 
+-- 
+1.9.1
+
+
+From b5eb79d72ebef3c9fa1865545d3f2a4785d6726a Mon Sep 17 00:00:00 2001
+From: MXE
+Date: Mon, 8 Jun 2015 14:59:14 +0300
+Subject: [PATCH 2/7] reliable STD::ISNAN and STD::ISFINITE, taken from
+ "alex85k": https://github.com/alex85k/winbuilds/blob/master/std_check.diff
+
+
+diff --git a/CMakeLists.txt b/CMakeLists.txt
+index d95f2b1..63d5e10 100644
+--- a/CMakeLists.txt
++++ b/CMakeLists.txt
+@@ -123,6 +123,22 @@ if(CMAKE_COMPILER_IS_GNUCXX)
+     set(WARNING_FLAGS -Wall)
+ endif(CMAKE_COMPILER_IS_GNUCXX)
+ 
++##Support for finding STD_ISNAN on MXE/MINGW
++if(NOT HAVE_STD_ISNAN)
++check_cxx_source_compiles(
++  "#include <cmath>
++  int main() { double x=0.1; return std::isnan(x)?1:0; }"
++  HAVE_STD_ISNAN)
++endif()
++
++##Support for finding STD_ISFINITE on MXE/MINGW
++if(NOT HAVE_STD_ISFINITE)
++check_cxx_source_compiles(
++  "#include <cmath>
++  int main() { double x=0.1; return std::isfinite(x)?1:0; }"
++  HAVE_STD_ISFINITE)
++endif()
++
+ if(WIN32)
+ 
+     if(MSVC)
+-- 
+1.9.1
+
+
+From e51104b4a827ea27fc9be054513fb2990f323525 Mon Sep 17 00:00:00 2001
+From: MXE
+Date: Mon, 8 Jun 2015 15:03:13 +0300
+Subject: [PATCH 3/7] adoption of STD::ISNAN(X) syntax istead of ISNAN(X),
+ influenced by "springmeyer":
+ https://github.com/mapnik/mapnik-packaging/commit/47b324b7569b69b8f995f67a8df7ed6959575fd8
+
+
+diff --git a/src/Airports/GenAirports850/linearfeature.cxx b/src/Airports/GenAirports850/linearfeature.cxx
+index 5c3724e..a38d87c 100644
+--- a/src/Airports/GenAirports850/linearfeature.cxx
++++ b/src/Airports/GenAirports850/linearfeature.cxx
+@@ -246,7 +246,7 @@ void LinearFeature::ConvertContour( BezContour* src, bool closed )
+         // theat close to 180 at the control point to the cur node and next node
+         if ( curve_type == CURVE_QUADRATIC )
+         {
+-            if ( (abs(theta1 - 180.0) < 5.0 ) || (abs(theta1) < 5.0 ) || (isnan(theta1)) )
++            if ( (abs(theta1 - 180.0) < 5.0 ) || (abs(theta1) < 5.0 ) || (std::isnan(theta1)) )
+             {
+                 TG_LOG(SG_GENERAL, SG_DEBUG, "\nLinearFeature: Quadtratic curve with cp in line : convert to linear: " << description << ": theta is " << theta1 );
+                 curve_type = CURVE_LINEAR;
+@@ -259,11 +259,11 @@ void LinearFeature::ConvertContour( BezContour* src, bool closed )
+ 
+         if ( curve_type == CURVE_CUBIC )
+         {
+-            if ( (abs(theta1 - 180.0) < 5.0 ) || (abs(theta1) < 5.0 ) || (isnan(theta1)) )
++            if ( (abs(theta1 - 180.0) < 5.0 ) || (abs(theta1) < 5.0 ) || (std::isnan(theta1)) )
+             {
+                 TG_LOG(SG_GENERAL, SG_DEBUG, "\nLinearFeature: Cubic curve with cp1 in line : " << description << ": theta is " << theta1 );
+ 
+-                if ( (abs(theta2 - 180.0) < 5.0 ) || (abs(theta2) < 5.0 ) || (isnan(theta2)) )
++                if ( (abs(theta2 - 180.0) < 5.0 ) || (abs(theta2) < 5.0 ) || (std::isnan(theta2)) )
+                 {
+                     TG_LOG(SG_GENERAL, SG_DEBUG, "\n               and cp2 in line : " << description << ": theta is " << theta2 << " CONVERTING TO LINEAR" );
+ 
+@@ -278,7 +278,7 @@ void LinearFeature::ConvertContour( BezContour* src, bool closed )
+             {
+                 TG_LOG(SG_GENERAL, SG_DEBUG, "\nLinearFeature: Cubic curve withOUT cp1 in line : keep quadtratic: " << description << ": theta is " << theta1 );
+ 
+-                if ( (abs(theta2 - 180.0) < 5.0 ) || (abs(theta2) < 5.0 ) || (isnan(theta2)) )
++                if ( (abs(theta2 - 180.0) < 5.0 ) || (abs(theta2) < 5.0 ) || (std::isnan(theta2)) )
+                 {
+                     TG_LOG(SG_GENERAL, SG_DEBUG, "\n               BUT cp2 IS in line : " << description << ": theta is " << theta2 );
+                 }
+@@ -1087,4 +1087,4 @@ void LinearFeature::GetLights( tglightcontour_list& lights )
+     {
+         lights.push_back( lighting_polys[i] );
+     }
+-}
+\ No newline at end of file
++}
+diff --git a/src/Lib/terragear/tg_misc.cxx b/src/Lib/terragear/tg_misc.cxx
+index ceeae60..a8e4889 100644
+--- a/src/Lib/terragear/tg_misc.cxx
++++ b/src/Lib/terragear/tg_misc.cxx
+@@ -174,7 +174,7 @@ SGGeod OffsetPointMiddle( const SGGeod& gPrev, const SGGeod& gCur, const SGGeod&
+     cp    = cross( dirCur, dirNext );
+     theta = SGMiscd::rad2deg(CalculateTheta( dirCur, dirNext ) );
+ 
+-    if ( (abs(theta - 180.0) < 0.1) || (abs(theta) < 0.1) || (isnan(theta)) ) {
++    if ( (abs(theta - 180.0) < 0.1) || (abs(theta) < 0.1) || (std::isnan(theta)) ) {
+         // straight line blows up math - offset 90 degree and dist is as given
+         courseOffset = SGMiscd::normalizePeriodic(0, 360, courseNext-90.0);
+         distOffset   = offset_by;
+@@ -275,7 +275,7 @@ void OffsetPointsMiddle( const SGGeod& gPrev, const SGGeod& gCur, const SGGeod&
+     cp    = cross( dirCur, dirNext );
+     theta = SGMiscd::rad2deg(CalculateTheta( dirCur, dirNext ) );
+ 
+-    if ( (abs(theta - 180.0) < 0.1) || (abs(theta) < 0.1) || (isnan(theta)) ) {
++    if ( (abs(theta - 180.0) < 0.1) || (abs(theta) < 0.1) || (std::isnan(theta)) ) {
+         // straight line blows up math - offset 90 degree and dist is as given
+         courseOffset = SGMiscd::normalizePeriodic(0, 360, courseNext-90.0);
+         distOffsetInner  = offset_by+width/2.0f;
+-- 
+1.9.1
+
+
+From c91e97fb6ff2dbefd5d0d6c6b886145d1e518fc7 Mon Sep 17 00:00:00 2001
+From: MXE
+Date: Mon, 8 Jun 2015 15:04:55 +0300
+Subject: [PATCH 4/7] fix "atoi was not declared in this scope". -Hamza Alloush
+
+
+diff --git a/src/Prep/DemChop/srtmchop.cxx b/src/Prep/DemChop/srtmchop.cxx
+index 57f3bad..6356e20 100644
+--- a/src/Prep/DemChop/srtmchop.cxx
++++ b/src/Prep/DemChop/srtmchop.cxx
+@@ -29,6 +29,7 @@
+ 
+ #include <string>
+ #include <iostream>
++#include <stdlib.h>     /* atoi */
+ #include <iomanip>
+ #include <fstream>
+ #include <sstream>
+-- 
+1.9.1
+
+
+From 5d4fda8048751df83b7b00066aa6fa55bb143dc5 Mon Sep 17 00:00:00 2001
+From: MXE
+Date: Mon, 8 Jun 2015 15:16:58 +0300
+Subject: [PATCH 5/7] needed packages by demchop.exe. -Hamza Alloush
+
+
+diff --git a/CMakeLists.txt b/CMakeLists.txt
+index 63d5e10..1ca920e 100644
+--- a/CMakeLists.txt
++++ b/CMakeLists.txt
+@@ -111,6 +111,11 @@ if (CMAKE_CL_64)
+ 	find_package(JPEG) # needed for SRTM
+ endif (CMAKE_CL_64)
+ 
++if (MINGW)
++	find_package(JPEG) # needed for SRTM
++	find_package(LZMA) # needed for SRTM
++endif (MINGW)
++
+ check_include_file(unistd.h HAVE_UNISTD_H)
+ check_include_file(sys/time.h HAVE_SYS_TIME_H)
+ check_include_file(windows.h HAVE_WINDOWS_H)
+diff --git a/src/Prep/DemChop/CMakeLists.txt b/src/Prep/DemChop/CMakeLists.txt
+index cba1650..2ee704e 100644
+--- a/src/Prep/DemChop/CMakeLists.txt
++++ b/src/Prep/DemChop/CMakeLists.txt
+@@ -28,6 +28,8 @@ target_link_libraries(srtmchop
+     HGT
+     ${ZLIB_LIBRARY}
+     ${TIFF_LIBRARIES}
++    ${JPEG_LIBRARIES}
++    ${LZMA_LIBRARIES}
+ 	${SRTMCHOP_LIBRARIES}
+ 	${SIMGEAR_CORE_LIBRARIES}
+ 	${SIMGEAR_CORE_LIBRARY_DEPENDENCIES})
+-- 
+1.9.1
+
+
+From 40899d1e6ebbe59b4fd51c0888b55621de30969d Mon Sep 17 00:00:00 2001
+From: MXE
+Date: Mon, 8 Jun 2015 15:28:05 +0300
+Subject: [PATCH 6/7] fix missing BZ2 linking issue, for gdalchop, ogr-decode,
+ and tg-construct. - Hamza Alloush
+
+
+diff --git a/CMakeLists.txt b/CMakeLists.txt
+index 1ca920e..65bfaf7 100644
+--- a/CMakeLists.txt
++++ b/CMakeLists.txt
+@@ -114,6 +114,7 @@ endif (CMAKE_CL_64)
+ if (MINGW)
+ 	find_package(JPEG) # needed for SRTM
+ 	find_package(LZMA) # needed for SRTM
++	find_package(BZip2)
+ endif (MINGW)
+ 
+ check_include_file(unistd.h HAVE_UNISTD_H)
+diff --git a/src/Airports/GenAirports850/CMakeLists.txt b/src/Airports/GenAirports850/CMakeLists.txt
+index e985ab4..afc8dbd 100644
+--- a/src/Airports/GenAirports850/CMakeLists.txt
++++ b/src/Airports/GenAirports850/CMakeLists.txt
+@@ -31,6 +31,7 @@ target_link_libraries(genapts850
+     terragear
+     ${GDAL_LIBRARY}
+     ${ZLIB_LIBRARY}
++    ${BZIP2_LIBRARIES}
+     ${CMAKE_THREAD_LIBS_INIT}
+     ${SIMGEAR_CORE_LIBRARIES}
+     ${SIMGEAR_CORE_LIBRARY_DEPENDENCIES}
+diff --git a/src/BuildTiles/Main/CMakeLists.txt b/src/BuildTiles/Main/CMakeLists.txt
+index 1881ede..39e03b8 100644
+--- a/src/BuildTiles/Main/CMakeLists.txt
++++ b/src/BuildTiles/Main/CMakeLists.txt
+@@ -32,6 +32,7 @@ target_link_libraries(tg-construct
+     ${ZLIB_LIBRARY}
+     ${SIMGEAR_CORE_LIBRARIES}
+     ${SIMGEAR_CORE_LIBRARY_DEPENDENCIES}
++    ${BZIP2_LIBRARIES}
+ )
+ 
+ install(TARGETS tg-construct RUNTIME DESTINATION bin)
+diff --git a/src/Prep/GDALChop/CMakeLists.txt b/src/Prep/GDALChop/CMakeLists.txt
+index ab78072..d1528ea 100644
+--- a/src/Prep/GDALChop/CMakeLists.txt
++++ b/src/Prep/GDALChop/CMakeLists.txt
+@@ -3,6 +3,7 @@ add_executable(gdalchop gdalchop.cxx)
+ 
+ target_link_libraries(gdalchop
+         terragear ${GDAL_LIBRARY}
++	${BZIP2_LIBRARIES}
+         ${ZLIB_LIBRARY}
+         ${SIMGEAR_CORE_LIBRARIES}
+         ${SIMGEAR_CORE_LIBRARY_DEPENDENCIES}
+diff --git a/src/Prep/OGRDecode/CMakeLists.txt b/src/Prep/OGRDecode/CMakeLists.txt
+index 99c774c..4a8ed5d 100644
+--- a/src/Prep/OGRDecode/CMakeLists.txt
++++ b/src/Prep/OGRDecode/CMakeLists.txt
+@@ -3,6 +3,8 @@ add_executable(ogr-decode ogr-decode.cxx)
+ 
+ target_link_libraries(ogr-decode 
+     ${GDAL_LIBRARY}
++    ${TIFF_LIBRARIES}
++    ${BZIP2_LIBRARIES}
+     terragear
+     ${ZLIB_LIBRARY}
+     ${CMAKE_THREAD_LIBS_INIT}
+diff --git a/src/Utils/poly2ogr/CMakeLists.txt b/src/Utils/poly2ogr/CMakeLists.txt
+index 96d5ca4..f45a161 100644
+--- a/src/Utils/poly2ogr/CMakeLists.txt
++++ b/src/Utils/poly2ogr/CMakeLists.txt
+@@ -7,6 +7,7 @@ endif(MSVC)
+ 
+ target_link_libraries(poly2ogr
+     ${GDAL_LIBRARY}
++    ${BZIP2_LIBRARIES}
+     terragear
+     ${GETOPT_LIB}
+     ${SIMGEAR_CORE_LIBRARIES}
+-- 
+1.9.1
+
+
+From 793c43081a1be9587a7e11a89e85b413d7831313 Mon Sep 17 00:00:00 2001
+From: MXE
+Date: Mon, 8 Jun 2015 15:29:50 +0300
+Subject: [PATCH 7/7] use Mingw's own <getopt.h>, avoiding a multiple
+ definitions conflict. -Hamza Alloush
+
+
+diff --git a/src/Prep/Terra/CMakeLists.txt b/src/Prep/Terra/CMakeLists.txt
+index f38e02b..264e3cb 100644
+--- a/src/Prep/Terra/CMakeLists.txt
++++ b/src/Prep/Terra/CMakeLists.txt
+@@ -6,8 +6,7 @@ add_library(Terra STATIC
+     Mask.cc Mask.h 
+     Quadedge.cc Quadedge.h 
+     Subdivision.cc Subdivision.h 
+-    Vec2.h Vec3.h
+-	getopt.c getopt.h 
++    Vec2.h Vec3.h 
+ )
+ 
+ add_executable(terra_bin 
+-- 
+1.9.1
+
