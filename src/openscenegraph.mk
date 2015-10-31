@@ -3,12 +3,12 @@
 
 PKG             := openscenegraph
 $(PKG)_IGNORE   :=
-$(PKG)_VERSION  := 3.4.0
-$(PKG)_CHECKSUM := 5c727d84755da276adf8c4a4a3a8ba9c9570fc4b4969f06f1d2e9f89b1e3040e
+$(PKG)_VERSION  := 3.2.0
+$(PKG)_CHECKSUM := ceca56e58e9ba245d5f9d0661352ddf405a7cb105341a122c5541b69c0ce032e
 $(PKG)_SUBDIR   := OpenSceneGraph-$($(PKG)_VERSION)
 $(PKG)_FILE     := OpenSceneGraph-$($(PKG)_VERSION).zip
 $(PKG)_URL      := http://trac.openscenegraph.org/downloads/developer_releases/$($(PKG)_FILE)
-$(PKG)_DEPS     := gcc boost curl dcmtk ffmpeg freetype gdal giflib gta jasper jpeg libpng openal openexr poppler qt tiff xine-lib zlib
+$(PKG)_DEPS     := gcc boost curl dcmtk freetype gdal giflib gta jasper jpeg libpng openal openexr poppler tiff zlib
 
 define $(PKG)_UPDATE
     $(WGET) -q -O- 'http://trac.openscenegraph.org/downloads/developer_releases/?C=M;O=D' | \
@@ -27,7 +27,7 @@ define $(PKG)_BUILD
         -DPKG_CONFIG_EXECUTABLE='$(PREFIX)/bin/$(TARGET)-pkg-config' \
         -DDYNAMIC_OPENTHREADS=$(CMAKE_SHARED_BOOL) \
         -DDYNAMIC_OPENSCENEGRAPH=$(CMAKE_SHARED_BOOL) \
-        -DBUILD_OSG_APPLICATIONS=OFF \
+        -DBUILD_OSG_APPLICATIONS=ON \
         -DPOPPLER_HAS_CAIRO_EXITCODE=0 \
         -D_OPENTHREADS_ATOMIC_USE_GCC_BUILTINS_EXITCODE=1 \
         -D_OPENTHREADS_ATOMIC_USE_WIN32_INTERLOCKED=1
