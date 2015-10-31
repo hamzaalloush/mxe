@@ -21,6 +21,7 @@ define $(PKG)_BUILD
         $(MXE_CONFIGURE_OPTS) \
         --with-gnutls \
         --without-ssl \
+	--without-ldap \
         --with-libidn \
         --enable-sspi \
         --enable-ipv6 \
