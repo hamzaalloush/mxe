@@ -4,7 +4,7 @@
 PKG             := osgearth
 $(PKG)_IGNORE   :=
 $(PKG)_VERSION  := 2.6.1
-$(PKG)_CHECKSUM := 4c68efb9e413a5d78fffa2142e3e2998d3535939
+$(PKG)_CHECKSUM := 9d1a7814569e21f369e53b5fbc116018b194328186ba469d28b22a42315010e3
 $(PKG)_SUBDIR   := gwaldron-osgearth-350f1a0
 $(PKG)_FILE     := gwaldron-osgearth-350f1a0.tar.gz
 $(PKG)_URL      := https://github.com/gwaldron/osgearth/tarball/osgearth-2.6
